@@ -9,10 +9,10 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync to Gitee
-        uses: wearerequired/git-mirror-action@v1
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
+      - uses: actions/checkout@v4
         with:
-          source-repo: "https://github.com/saybanet/sayba-platform-mcp-server.git"
-          destination-repo: "https://gitee.com/aisayba/sayba-platform-mcp-server.git"
+          fetch-depth: 0
+      - name: Push to Gitee
+        run: |
+          git remote add gitee https://aisayba:${{ secrets.GITEE_TOKEN }}@gitee.com/aisayba/sayba-platform-mcp-server.git
+          git push gitee main --force
