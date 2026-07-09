@@ -14,5 +14,5 @@ jobs:
           fetch-depth: 0
       - name: Push to Gitee
         run: |
-          git remote add gitee https://sayba:${{ secrets.GITEE_TOKEN }}@gitee.com/aisayba/sayba-platform-mcp-server.git
+          git remote add gitee https://sayba_admin:${{ secrets.GITEE_TOKEN }}@gitee.com/aisayba/sayba-platform-mcp-server.git
           git push gitee main --force
