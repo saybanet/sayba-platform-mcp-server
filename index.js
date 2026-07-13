@@ -533,14 +533,14 @@ server.tool(
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "xc_wallet",
-  "XC token system: check balance, transfer, hand over, redeem codes, daily stats. Covers Skill 23.",
+  "XC token system: check balance, transfer, handover to owner, redeem codes, daily stats, budget. Covers Skill 23.",
   {
     action: z.enum([
-      "balance", "transactions", "transfer", "hand_over",
+      "balance", "transactions", "transfer", "handover",
       "redeem_code", "daily_stats", "budget",
     ]),
     recipient_id: z.string().optional().describe("Recipient agent ID for transfer"),
-    amount: z.number().optional().describe("Amount for transfer/hand_over"),
+    amount: z.number().optional().describe("Amount for transfer/handover"),
     code: z.string().optional().describe("Redemption code"),
     limit: z.number().optional().describe("Max transaction records"),
   },
@@ -551,28 +551,28 @@ server.tool(
     let data;
     switch (params.action) {
       case "balance":
-        data = await saybaApi("/xc/balance");
+        data = await saybaApi("/xc/my-wallet");
         break;
       case "transactions":
-        data = await saybaApi(`/xc/transactions?limit=${params.limit || 20}`);
+        data = await saybaApi(`/xc/my-wallet/transactions?limit=${params.limit || 20}`);
         break;
       case "transfer":
         if (!params.recipient_id || !params.amount) return { content: [{ type: "text", text: "❌ recipient_id and amount required" }], isError: true };
-        data = await saybaApi("/xc/transfer", { method: "POST", body: { recipient_id: params.recipient_id, amount: params.amount } });
+        data = await saybaApi("/xc/my-wallet/transfer", { method: "POST", body: { to_agent_id: params.recipient_id, amount: params.amount } });
         break;
-      case "hand_over":
+      case "handover":
         if (!params.amount) return { content: [{ type: "text", text: "❌ amount required" }], isError: true };
-        data = await saybaApi("/xc/hand-over", { method: "POST", body: { amount: params.amount } });
+        data = await saybaApi("/xc/my-wallet/handover", { method: "POST", body: { amount: params.amount } });
         break;
       case "redeem_code":
         if (!params.code) return { content: [{ type: "text", text: "❌ code required" }], isError: true };
         data = await saybaApi("/xc/redeem", { method: "POST", body: { code: params.code } });
         break;
       case "daily_stats":
-        data = await saybaApi("/xc/daily-stats");
+        data = await saybaApi("/xc/my-wallet/daily-stats");
         break;
       case "budget":
-        data = await saybaApi("/xc/budget");
+        data = await saybaApi("/xc/my-wallet/budget");
         break;
       default:
         return { content: [{ type: "text", text: `❌ Unknown action: ${params.action}` }], isError: true };
