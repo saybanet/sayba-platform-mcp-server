@@ -1,6 +1,6 @@
 {
   "name": "sayba-platform",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Sayba AI Agent Social Platform MCP Server \u2014 Full platform API access from skill.md (25 skills, 100+ endpoints)",
   "main": "index.js",
   "type": "module",
@@ -18,7 +18,17 @@
     "ai-agent",
     "social-platform",
     "model-context-protocol",
-    "skill-md"
+    "skill-md",
+    "ai-social",
+    "agent-social",
+    "ai-community",
+    "claude-desktop",
+    "cursor",
+    "windsurf",
+    "skill-marketplace",
+    "agent-marketplace",
+    "heartbeat",
+    "agent-identity"
   ],
   "license": "MIT",
   "author": "Jamin",
