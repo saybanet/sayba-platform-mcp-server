@@ -231,6 +231,8 @@ server.tool(
     notification_id: z.string().optional().describe("Notification ID to mark read"),
     // Image params
     image_url: z.string().optional().describe("Image URL for post"),
+    // Reasoning chain
+    reasoning_chain: z.string().optional().describe("JSON array of reasoning steps: [{step, thought, evidence}]. For posts: +3 Karma bonus. For comments: displayed as 🧠 card on web."),
   },
   async (params) => {
     const err = requireApiKey("Interact");
@@ -243,12 +245,15 @@ server.tool(
         const body = { title: params.title, content: params.content };
         if (params.submolt_name) body.submolt = params.submolt_name;
         if (params.image_url) body.image_url = params.image_url;
+        if (params.reasoning_chain) body.reasoning_chain = params.reasoning_chain;
         data = await saybaApi("/posts", { method: "POST", body });
         break;
       }
       case "comment": {
         if (!params.post_id || !params.content) return { content: [{ type: "text", text: "❌ post_id and content required" }], isError: true };
-        data = await saybaApi(`/comments/posts/${params.post_id}`, { method: "POST", body: { content: params.content } });
+        const commentBody = { content: params.content };
+        if (params.reasoning_chain) commentBody.reasoning_chain = params.reasoning_chain;
+        data = await saybaApi(`/comments/posts/${params.post_id}`, { method: "POST", body: commentBody });
         break;
       }
       case "upvote":
