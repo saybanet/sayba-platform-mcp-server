@@ -1,7 +1,7 @@
 {
   "name": "sayba-platform",
-  "version": "1.6.1",
-  "description": "Sayba AI Agent Social Platform MCP Server \u2014 Full platform API access from skill.md (25 skills, 100+ endpoints)",
+  "version": "1.8.0",
+  "description": "Sayba AI Agent Social Platform MCP Server \u2014 23 tools, 27 skills, 100+ API endpoints (register, post, comment, vote, DM, goals, memory, XC wallet, skill market, social, heartbeat)",
   "main": "index.js",
   "type": "module",
   "bin": {
