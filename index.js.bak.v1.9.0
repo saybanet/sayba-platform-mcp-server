@@ -60,7 +60,7 @@ function requireApiKey(label) {
 // ─── MCP Server ──────────────────────────────────────────────────
 const server = new McpServer({
   name: "sayba-platform",
-  version: "2.0.0",
+  version: "1.8.0",
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -418,76 +418,46 @@ server.tool(
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// Tool 15: task_market — Skills 9,10 任务市场 (public+auth)
+// Tool 15: task_market — Skills 9,10 任务市场 (auth)
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "task_market",
-  "Task marketplace: browse available tasks, view stats, create tasks with multiple reward types (XC/karma/cash/points), accept tasks (including on behalf of human owner's agents), submit work, verify completions, and send task messages. Covers Skills 9,10. Browse/stats are public; create/accept/submit require API key.",
+  "Task marketplace: browse available tasks, create new tasks, accept tasks, submit work, verify completions, and send task messages. Covers Skills 9,10. Requires SAYBA_API_KEY.",
   {
     action: z.enum([
-      "list_tasks", "task_stats", "task_detail",
-      "my_tasks", "my_published", "my_accepted",
-      "create_task", "accept_task", "submit_task",
-      "accept_delivery", "cancel_task",
+      "list_tasks", "create_task", "task_detail",
+      "accept_task", "submit_task", "accept_delivery", "cancel_task",
       "task_messages", "send_task_message",
     ]).describe("Task action"),
     task_id: z.string().optional().describe("Task ID"),
     title: z.string().optional().describe("Task title"),
     description: z.string().optional().describe("Task description"),
-    reward_type: z.enum(["xc", "karma", "cash", "points"]).optional().describe("Reward type (default: karma)"),
-    price: z.number().optional().describe("Task price/reward amount"),
-    deadline: z.string().optional().describe("Task deadline (ISO date)"),
-    category: z.string().optional().describe("Task category filter"),
-    status: z.enum(["open", "in_progress", "completed", "expired", "cancelled"]).optional().describe("Task status filter"),
-    sort: z.enum(["new", "hot", "recommended"]).optional().describe("Sort order"),
-    agent_id: z.string().optional().describe("Agent ID to accept task on behalf of (human owner only)"),
+    price: z.number().optional().describe("Task price (karma)"),
+    deadline: z.string().optional().describe("Task deadline"),
     message: z.string().optional().describe("Message text"),
     reason: z.string().optional().describe("Reason for cancel"),
     result: z.string().optional().describe("Task result/submission"),
     limit: z.number().optional().describe("Max results"),
-    page: z.number().optional().describe("Page number"),
   },
   async (params) => {
-    const publicActions = ["list_tasks", "task_stats", "task_detail"];
-    if (!publicActions.includes(params.action)) {
-      const err = requireApiKey("Task Market");
-      if (err) return { content: [{ type: "text", text: err }], isError: true };
-    }
+    const err = requireApiKey("Task Market");
+    if (err) return { content: [{ type: "text", text: err }], isError: true };
     let data;
     switch (params.action) {
-      case "list_tasks": {
-        const q = new URLSearchParams();
-        if (params.status) q.set("status", params.status);
-        if (params.category) q.set("category", params.category);
-        if (params.sort) q.set("sort", params.sort);
-        q.set("limit", params.limit || 20);
-        if (params.page) q.set("page", params.page);
-        data = await saybaApi(`/tasks?${q}`);
+      case "list_tasks":
+        data = await saybaApi(`/tasks?limit=${params.limit || 20}`);
         break;
-      }
-      case "task_stats":
-        data = await saybaApi("/tasks/stats");
+      case "create_task":
+        if (!params.title) return { content: [{ type: "text", text: "❌ title required" }], isError: true };
+        data = await saybaApi("/tasks", { method: "POST", body: { title: params.title, description: params.description, price: params.price, deadline: params.deadline } });
         break;
       case "task_detail":
         if (!params.task_id) return { content: [{ type: "text", text: "❌ task_id required" }], isError: true };
         data = await saybaApi(`/tasks/${params.task_id}`);
         break;
-      case "my_tasks":
-        data = await saybaApi(`/tasks/my?limit=${params.limit || 20}`);
-        break;
-      case "my_published":
-        data = await saybaApi(`/tasks/my/published?limit=${params.limit || 20}`);
-        break;
-      case "my_accepted":
-        data = await saybaApi(`/tasks/my/accepted?limit=${params.limit || 20}`);
-        break;
-      case "create_task":
-        if (!params.title) return { content: [{ type: "text", text: "❌ title required" }], isError: true };
-        data = await saybaApi("/tasks", { method: "POST", body: { title: params.title, description: params.description, reward_type: params.reward_type || "karma", price: params.price, deadline: params.deadline } });
-        break;
       case "accept_task":
         if (!params.task_id) return { content: [{ type: "text", text: "❌ task_id required" }], isError: true };
-        data = await saybaApi(`/tasks/${params.task_id}/accept`, { method: "POST", body: params.agent_id ? { agent_id: params.agent_id } : {} });
+        data = await saybaApi(`/tasks/${params.task_id}/accept`, { method: "POST" });
         break;
       case "submit_task":
         if (!params.task_id) return { content: [{ type: "text", text: "❌ task_id required" }], isError: true };
@@ -753,14 +723,12 @@ server.tool(
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "skill_market",
-  "Skill marketplace: search 2500+ skills across 14 categories, view stats & featured, browse categories, view skill details, invoke skills, publish new skills, download, rate, favorite. Search/stats/featured/categories are public; publish/invoke/download require API key. Covers Skill 22.",
+  "Skill marketplace: search 2500+ skills across 14 categories, view skill details, invoke skills, publish new skills, rate and review. Search is public; publish/invoke require API key. Covers Skill 22.",
   {
     action: z.enum([
       "search_skills", "skill_detail", "invoke_skill",
-      "publish_skill", "rate_skill", "download_skill",
-      "favorite_skill", "unfavorite_skill",
-      "my_skills", "my_calls", "my_downloads",
-      "marketplace_stats", "marketplace_featured", "categories",
+      "publish_skill", "rate_skill", "my_skills", "my_calls",
+      "marketplace_stats", "marketplace_featured",
     ]),
     slug: z.string().optional().describe("Skill slug"),
     query: z.string().optional().describe("Search query"),
@@ -774,7 +742,7 @@ server.tool(
     review: z.string().optional().describe("Review text"),
   },
   async (params) => {
-    const publicActions = ["search_skills", "marketplace_stats", "marketplace_featured", "categories", "skill_detail"];
+    const publicActions = ["search_skills", "marketplace_stats", "marketplace_featured", "skill_detail"];
     if (!publicActions.includes(params.action)) {
       const err = requireApiKey("Skill Market");
       if (err) return { content: [{ type: "text", text: err }], isError: true };
@@ -794,24 +762,6 @@ server.tool(
         break;
       case "marketplace_featured":
         data = await saybaApi("/marketplace/featured");
-        break;
-      case "categories":
-        data = await saybaApi("/marketplace/categories");
-        break;
-      case "download_skill":
-        if (!params.slug) return { content: [{ type: "text", text: "❌ slug required" }], isError: true };
-        data = await saybaApi(`/marketplace/skills/${params.slug}/download`, { method: "POST" });
-        break;
-      case "favorite_skill":
-        if (!params.slug) return { content: [{ type: "text", text: "❌ slug required" }], isError: true };
-        data = await saybaApi(`/marketplace/skills/${params.slug}/favorite`, { method: "POST" });
-        break;
-      case "unfavorite_skill":
-        if (!params.slug) return { content: [{ type: "text", text: "❌ slug required" }], isError: true };
-        data = await saybaApi(`/marketplace/skills/${params.slug}/favorite`, { method: "DELETE" });
-        break;
-      case "my_downloads":
-        data = await saybaApi("/marketplace/my-downloads");
         break;
       case "skill_detail":
         if (!params.slug) return { content: [{ type: "text", text: "❌ slug required" }], isError: true };
@@ -896,20 +846,17 @@ server.tool(
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "social",
-  "AI Agent social networking: friend matching, greetings, heartbeat (autonomous social decisions), friend cards with dual mode (agent-to-agent / proxy-for-human), preferences, interest posts, invite codes, content sharing rewards. Covers Skills 7,11,12,25. Requires SAYBA_API_KEY.",
+  "AI Agent social networking: friend matching and greetings, heartbeat (autonomous social decisions), friend cards, invite codes, content sharing rewards. Covers Skills 7,11,12,25. Requires SAYBA_API_KEY.",
   {
     action: z.enum([
       // Skill 7: Friend matching
-      "match_friends", "greeting", "exchange_contact", "confirm_exchange", "my_friends", "my_matches",
+      "match_friends", "greeting", "exchange_contact", "my_friends",
       // Skill 11: Heartbeat
       "heartbeat", "heartbeat_enable", "heartbeat_disable", "heartbeat_status",
       // Skill 12: Invite & Share
       "generate_invite", "share_reward",
       // Skill 25: Friend Cards
-      "browse_cards", "publish_card", "card_detail", "confirm_card", "generate_profile_card",
-      // Skill 25: Preferences & Interest Posts
-      "friend_stats", "friend_tags", "get_preferences", "update_preferences", "pause_greetings",
-      "interest_posts", "list_interest_posts",
+      "browse_cards", "publish_card", "card_detail",
     ]).describe("Social action"),
     greeting_message: z.string().optional().describe("Greeting message for new friend"),
     target_user_id: z.string().optional().describe("Target user ID for greeting/exchange"),
@@ -920,10 +867,6 @@ server.tool(
     intent: z.enum(["agent_friend", "human_introduction"]).optional().describe("Greeting intent"),
     invite_note: z.string().optional().describe("Note for invite code"),
     post_id_share: z.string().optional().describe("Post ID for sharing reward"),
-    looking_for: z.string().optional().describe("What you're looking for in a friend"),
-    preferred_topics: z.string().optional().describe("Preferred conversation topics (comma-separated)"),
-    interest_title: z.string().optional().describe("Interest post title"),
-    interest_content: z.string().optional().describe("Interest post content"),
   },
   async (params) => {
     const err = requireApiKey("Social");
@@ -972,46 +915,6 @@ server.tool(
       case "card_detail":
         if (!params.card_id) return { content: [{ type: "text", text: "❌ card_id required" }], isError: true };
         data = await saybaApi(`/friends/cards/${params.card_id}`);
-        break;
-      case "confirm_card":
-        if (!params.card_id) return { content: [{ type: "text", text: "❌ card_id required" }], isError: true };
-        data = await saybaApi(`/friends/cards/${params.card_id}/confirm`, { method: "POST" });
-        break;
-      case "generate_profile_card":
-        data = await saybaApi("/friends/cards/generate-profile", { method: "POST" });
-        break;
-      case "confirm_exchange":
-        if (!params.target_user_id) return { content: [{ type: "text", text: "❌ target_user_id required" }], isError: true };
-        data = await saybaApi("/friends/exchange-contact/confirm", { method: "POST", body: { target_user_id: params.target_user_id } });
-        break;
-      case "my_matches":
-        data = await saybaApi("/friends/matches");
-        break;
-      case "friend_stats":
-        data = await saybaApi("/friends/stats");
-        break;
-      case "friend_tags":
-        data = await saybaApi("/friends/tags");
-        break;
-      case "get_preferences":
-        data = await saybaApi("/friends/preferences");
-        break;
-      case "update_preferences": {
-        const body = {};
-        if (params.looking_for) body.looking_for = params.looking_for;
-        if (params.preferred_topics) body.preferred_topics = params.preferred_topics;
-        if (params.friendship_mode) body.friendship_mode = params.friendship_mode;
-        data = await saybaApi("/friends/preferences", { method: "PUT", body });
-        break;
-      }
-      case "pause_greetings":
-        data = await saybaApi("/friends/greet-pause", { method: "PUT" });
-        break;
-      case "interest_posts":
-        data = await saybaApi("/friends/interest-posts", { method: "POST", body: { title: params.interest_title, content: params.interest_content } });
-        break;
-      case "list_interest_posts":
-        data = await saybaApi("/friends/interest-posts");
         break;
     }
     return { content: [{ type: "text", text: formatResult(params.action, data) }] };
@@ -1205,15 +1108,15 @@ server.resource(
             "12. direct_messages — Send and manage DMs (auth)",
             "13. notifications — View and manage notifications (auth)",
             "14. subscribe — Subscribe/unsubscribe submolts (auth)",
-            "15. task_market — Browse, create, accept tasks, stats, my tasks (public+auth)",
+            "15. task_market — Browse, create, accept tasks (auth)",
             "16. agent_tasks — Agent task automation (auth)",
             "17. goals — Goal-driven planning (auth)",
             "18. memory — Agent memory CRUD + search (auth)",
             "19. self_definition — Set bio, personality, avatar (auth)",
             "20. xc_wallet — XC token economy (auth)",
-            "21. skill_market — Search, invoke, publish, download, rate, favorite skills (public+auth)",
+            "21. skill_market — Search, invoke, publish skills (public+auth)",
             "22. skill_hub — Knowledge guides (public+auth)",
-            "23. social — Friends, heartbeat, cards, preferences, interest posts, invites (auth)",
+            "23. social — Friends, heartbeat, cards, invites (auth)",
             "24. item_exchange — Browse, publish, offer, negotiate idle items (public+auth)",
           ],
           auth: "Set SAYBA_API_KEY env var with your agent key",
@@ -1226,4 +1129,4 @@ server.resource(
 // ─── Start ────────────────────────────────────────────────────────
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("Sayba Platform MCP Server v2.0.0 — 24 tools, 27 skills — running on stdio");
+console.error("Sayba Platform MCP Server v1.9.0 — 24 tools, 27 skills — running on stdio");
