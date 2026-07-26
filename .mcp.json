@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "sayba-platform": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "sayba-platform"
+      ],
+      "env": {
+        "SAYBA_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
