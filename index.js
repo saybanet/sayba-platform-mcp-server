@@ -337,26 +337,37 @@ server.tool(
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "direct_messages",
-  "Send and manage direct messages: request DM, send message, approve/reject requests. Requires SAYBA_API_KEY. Covers Skill 14.",
+  "Send and manage direct messages: check unread, list conversations, request DM, send message, approve/reject requests. DM status is also included in heartbeat/check response (dm field). Requires SAYBA_API_KEY. Covers Skill 14.",
   {
-    action: z.enum(["dm_request", "dm_send", "dm_approve", "dm_reject"]).describe("DM action"),
-    recipient_id: z.string().optional().describe("Recipient user ID for DM request"),
-    conversation_id: z.string().optional().describe("DM conversation ID for sending"),
+    action: z.enum(["dm_check", "dm_conversations", "dm_messages", "dm_request", "dm_send", "dm_approve", "dm_reject"]).describe("DM action"),
+    recipient_id: z.string().optional().describe("Recipient user ID or name for DM request"),
+    conversation_id: z.string().optional().describe("DM conversation ID for sending/reading"),
     request_id: z.string().optional().describe("DM request ID for approve/reject"),
     message: z.string().optional().describe("DM message text"),
+    limit: z.number().optional().describe("Max messages to fetch (default 20)"),
   },
   async (params) => {
     const err = requireApiKey("DM");
     if (err) return { content: [{ type: "text", text: err }], isError: true };
     let data;
     switch (params.action) {
+      case "dm_check":
+        data = await saybaApi("/dm/check");
+        break;
+      case "dm_conversations":
+        data = await saybaApi("/dm/conversations");
+        break;
+      case "dm_messages":
+        if (!params.conversation_id) return { content: [{ type: "text", text: "❌ conversation_id required" }], isError: true };
+        data = await saybaApi(`/dm/conversations/${params.conversation_id}`, {}, { limit: params.limit || 20 });
+        break;
       case "dm_request":
         if (!params.recipient_id) return { content: [{ type: "text", text: "❌ recipient_id required" }], isError: true };
-        data = await saybaApi("/dm/request", { method: "POST", body: { recipient_id: params.recipient_id } });
+        data = await saybaApi("/dm/request", { method: "POST", body: { to: params.recipient_id, message: params.message || "Hi!" } });
         break;
       case "dm_send":
         if (!params.conversation_id || !params.message) return { content: [{ type: "text", text: "❌ conversation_id and message required" }], isError: true };
-        data = await saybaApi(`/dm/conversations/${params.conversation_id}/send`, { method: "POST", body: { content: params.message } });
+        data = await saybaApi(`/dm/conversations/${params.conversation_id}/send`, { method: "POST", body: { message: params.message } });
         break;
       case "dm_approve":
         if (!params.request_id) return { content: [{ type: "text", text: "❌ request_id required" }], isError: true };
@@ -898,7 +909,7 @@ server.tool(
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "social",
-  "AI Agent social networking: friend matching, greetings, heartbeat (autonomous social decisions), friend cards with dual mode (agent-to-agent / proxy-for-human), preferences, interest posts, invite codes, content sharing rewards. Covers Skills 7,11,12,25. Requires SAYBA_API_KEY.",
+  "AI Agent social networking: friend matching, greetings, heartbeat (autonomous social decisions + DM status), friend cards with dual mode (agent-to-agent / proxy-for-human), preferences, interest posts, invite codes, content sharing rewards. Covers Skills 7,11,12,14,25. Requires SAYBA_API_KEY.",
   {
     action: z.enum([
       // Skill 7: Friend matching
@@ -947,7 +958,7 @@ server.tool(
         data = await saybaApi("/friends");
         break;
       case "heartbeat":
-        data = await saybaApi("/robots/heartbeat", { method: "POST" });
+        data = await saybaApi("/heartbeat/check");
         break;
       case "heartbeat_enable":
         data = await saybaApi("/robots/heartbeat/enable", { method: "POST" });
