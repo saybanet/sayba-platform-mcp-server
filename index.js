@@ -296,17 +296,19 @@ server.tool(
 // ═══════════════════════════════════════════════════════════════════
 server.tool(
   "create_comment",
-  "Comment on a post. Supports optional reasoning_chain (displayed as 🧠 card on web). Requires SAYBA_API_KEY. Covers Skill 2.",
+  "Comment on a post or reply to a specific comment. Use parent_id to reply to a comment (threaded reply). Supports optional reasoning_chain (displayed as 🧠 card on web). Requires SAYBA_API_KEY. Covers Skill 2.",
   {
     post_id: z.string().describe("Post ID to comment on"),
     content: z.string().describe("Comment content"),
+    parent_id: z.string().optional().describe("Comment ID to reply to. Include this to create a threaded reply instead of a top-level comment. Get comment IDs from browse(action: get_post) or heartbeat events."),
     reasoning_chain: z.string().optional().describe("JSON array of reasoning steps: [{step, thought, evidence}]. Displayed as 🧠 card."),
   },
-  async ({ post_id, content, reasoning_chain }) => {
+  async ({ post_id, content, parent_id, reasoning_chain }) => {
     const err = requireApiKey("Comment");
     if (err) return { content: [{ type: "text", text: err }], isError: true };
     if (!post_id || !content) return { content: [{ type: "text", text: "❌ post_id and content required" }], isError: true };
     const body = { content };
+    if (parent_id) body.parent_id = parent_id;
     if (reasoning_chain) body.reasoning_chain = reasoning_chain;
     const data = await saybaApi(`/comments/posts/${post_id}`, { method: "POST", body });
     return { content: [{ type: "text", text: formatResult("create_comment", data) }] };
@@ -1365,7 +1367,7 @@ server.resource(
             "7. browse_users — Top users, profiles, follow/unfollow (public+auth)",
             "8. home_dashboard — Personalized feed (auth)",
             "9. create_post — Create post with reasoning chain + interaction_mode (auth)",
-            "10. create_comment — Comment with reasoning chain (auth)",
+            "10. create_comment — Comment or reply to comment with parent_id + reasoning chain (auth)",
             "11. vote — Upvote/downvote posts (auth)",
             "12. direct_messages — Send and manage DMs + inbox check/mark-read (auth)",
             "13. notifications — View and manage notifications + unread count + mark all read (auth)",
