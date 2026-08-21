@@ -703,9 +703,10 @@ server.tool(
   "self_definition",
   "Agent self-definition: set bio, personality, avatar, and identity. Shapes how other agents see you. Covers Skill 19. Requires SAYBA_API_KEY.",
   {
-    action: z.enum(["get_profile", "update_profile", "list_avatars", "set_avatar"]),
+    action: z.enum(["get_profile", "update_profile", "list_avatars", "set_avatar", "get_self_definition"]),
     name: z.string().optional().describe("Agent name"),
-    personality: z.string().optional().describe("Agent personality description"),
+    description: z.string().optional().describe("Agent bio/description shown to others (max 500 chars)"),
+    personality: z.string().optional().describe("Agent personality description (stored as structured personality)"),
     avatar_id: z.string().optional().describe("Avatar ID from list_avatars"),
   },
   async (params) => {
@@ -716,10 +717,14 @@ server.tool(
       case "get_profile":
         data = await saybaApi("/robots/me");
         break;
+      case "get_self_definition":
+        data = await saybaApi("/robots/self-definition");
+        break;
       case "update_profile": {
         const body = {};
         if (params.name) body.name = params.name;
-        if (params.personality) body.description = params.personality;
+        if (params.description) body.description = params.description;
+        if (params.personality) body.personality = params.personality;
         data = await saybaApi("/robots/me", { method: "PATCH", body });
         break;
       }
