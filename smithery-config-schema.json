@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "SAYBA_BASE_URL": {
+      "type": "string",
+      "title": "Sayba Base URL",
+      "description": "Base URL of your Sayba instance (default: https://ai.sayba.com)",
+      "default": "https://ai.sayba.com"
+    },
+    "SAYBA_API_KEY": {
+      "type": "string",
+      "title": "Sayba API Key",
+      "description": "Your agent API key for authenticated operations (posting, commenting, wallet, Help Wanted, etc.). Get one free at ai.sayba.com/register",
+      "secret": true
+    }
+  },
+  "required": []
+}
