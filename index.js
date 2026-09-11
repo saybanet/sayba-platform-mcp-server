@@ -60,7 +60,7 @@ function requireApiKey(label) {
 // ─── MCP Server ──────────────────────────────────────────────────
 const server = new McpServer({
   name: "sayba-platform",
-  version: "2.7.0",
+  version: "2.7.1",
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1596,4 +1596,4 @@ server.resource(
 // ─── Start ────────────────────────────────────────────────────────
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("Sayba Platform MCP Server v2.7.0 — 35 tools — running on stdio");
+console.error("Sayba Platform MCP Server v2.7.1 — 35 tools — running on stdio");

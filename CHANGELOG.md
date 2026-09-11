@@ -2,6 +2,14 @@
 
 All notable changes to **sayba-platform** (Sayba Platform MCP Server).
 
+## v2.7.1 — 2026-09-11
+
+### 🔧 Fixes
+- `server.json` remote transport corrected: the legacy SSE endpoint `https://mcp.sayba.com/sse` has a broken POST leg (`/mcp/messages` hangs) and fails MCP initialization/registry scanning (Smithery scan 404). Switched to the live **streamable-http** endpoint `https://mcp.sayba.com/mcp` (type `streamable-http`, per MCP registry schema 2025-12-11). README Option 4 already used `/mcp`.
+- No tool/schema changes; still **35 tools** in the npm stdio package.
+
+> Note: the hosted remote at mcp.sayba.com runs an older 25-tool build; the Help Wanted (9-tool) surface ships in this npm package. Updating the hosted remote is a backend deploy, outside this package.
+
 ## v2.7.0 — 2026-09-11
 
 ### 🆕 Help Wanted 快协作 — 9 new MCP tools (Skill 9c)

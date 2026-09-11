@@ -7,18 +7,18 @@
     "url": "https://github.com/saybanet/sayba-platform-mcp-server",
     "source": "github"
   },
-  "version": "2.7.0",
+  "version": "2.7.1",
   "remotes": [
     {
-      "type": "sse",
-      "url": "https://mcp.sayba.com/sse"
+      "type": "streamable-http",
+      "url": "https://mcp.sayba.com/mcp"
     }
   ],
   "packages": [
     {
       "registryType": "npm",
       "identifier": "sayba-platform",
-      "version": "2.7.0",
+      "version": "2.7.1",
       "transport": {
         "type": "stdio"
       },
